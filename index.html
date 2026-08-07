@@ -1310,6 +1310,11 @@
                 <input type="file" id="fileInput" accept=".xlsx,.xls" style="display:none">
             </div>
 
+            <!-- Template Download -->
+            <div style="text-align:center;margin:-8px 0 16px;">
+                <button class="btn btn-outline" id="btnDownloadTemplate" style="font-size:13px;">📥 下载 Excel 模板</button>
+            </div>
+
             <!-- Load Info -->
             <div id="load-info" class="load-info hidden">
                 <span>📊</span>
@@ -2707,6 +2712,56 @@
             }
         };
 
+        // ─── Template Download ──────────────────────────
+        App.downloadTemplate = function() {
+            const templateData = [
+                {
+                    '来源': '示例',
+                    '题目': '以下哪个是编程语言？',
+                    '选项A': 'Python',
+                    '选项B': 'HTML',
+                    '选项C': 'CSS',
+                    '选项D': 'JSON',
+                    '答案': 'A',
+                    '试题解析': 'Python 是通用编程语言，HTML/CSS/JSON 不是编程语言'
+                },
+                {
+                    '来源': '示例',
+                    '题目': 'TCP 协议属于哪一层？',
+                    '选项A': '应用层',
+                    '选项B': '传输层',
+                    '选项C': '网络层',
+                    '选项D': '数据链路层',
+                    '答案': 'B',
+                    '试题解析': 'TCP 位于传输层，提供可靠的面向连接的数据传输服务'
+                },
+                {
+                    '来源': '示例',
+                    '题目': '判断：JavaScript 和 Java 是同一门语言。',
+                    '选项A': '正确',
+                    '选项B': '错误',
+                    '答案': 'B',
+                    '试题解析': 'JavaScript 和 Java 是两种完全不同的编程语言'
+                }
+            ];
+
+            const ws = XLSX.utils.json_to_sheet(templateData);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, '题库模板');
+            // Set column widths
+            ws['!cols'] = [
+                { wch: 10 },  // 来源
+                { wch: 40 },  // 题目
+                { wch: 20 },  // 选项A
+                { wch: 20 },  // 选项B
+                { wch: 20 },  // 选项C
+                { wch: 20 },  // 选项D
+                { wch: 8 },   // 答案
+                { wch: 50 },  // 试题解析
+            ];
+            XLSX.writeFile(wb, '考试题库模板.xlsx');
+        };
+
         // ─── Event Wiring ─────────────────────────────
         document.addEventListener('DOMContentLoaded', () => {
             // Home page buttons
@@ -2731,6 +2786,9 @@
                     });
                 }, 100);
             });
+
+            // Template download
+            document.getElementById('btnDownloadTemplate')?.addEventListener('click', App.downloadTemplate);
 
             // Back buttons
             document.querySelectorAll('.back-btn').forEach(btn => {
