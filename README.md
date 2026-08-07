@@ -1,7 +1,7 @@
 # 🎯 Exam Treasure — 考试练习系统
 
 > 纯前端、零配置的考试练习工具。上传 Excel 题库即可开始练习、模拟考试、错题巩固。
-> 🔗 **在线访问：https://BlueQBL.github.io/agent-exam-treasure/**（无需下载，打开即用）  
+> 🔗 **在线访问：https://BlueQBL.github.io/agent-exam-treasure  
 > 双击 `index.html` 即可本地使用，无需任何后端服务。
 
 ---
