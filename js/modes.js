@@ -35,7 +35,7 @@ App.PracticeMode = {
         const q = this.questions[this.currentIndex];
         const userAnswer = this.answers[q.id] || null;
         const showAnswer = userAnswer != null;
-        App.QuestionRenderer.render(q, 'practice-question', showAnswer, userAnswer);
+        App.QuestionRenderer.render(q, 'practice-question', showAnswer, userAnswer, this.currentIndex + 1);
         document.getElementById('practice-progress').textContent =
             `${this.currentIndex + 1}/${this.questions.length}`;
         const pct = ((this.currentIndex + 1) / this.questions.length) * 100;
@@ -52,9 +52,10 @@ App.PracticeMode = {
         if (q.type === '多选') {
             setTimeout(() => {
                 App.QuestionRenderer.setupSelectAll(q);
-                const container = document.getElementById(`options-${q.id}`);
+                const container = App.QuestionRenderer.getOptionsContainer(q);
                 if (!container) return;
-                const old = container.parentElement.querySelector('.multi-confirm-btn');
+                const card = container.parentElement;
+                const old = card.querySelector('.multi-confirm-btn');
                 if (old) old.remove();
                 const btn = document.createElement('button');
                 btn.className = 'btn btn-primary multi-confirm-btn';
@@ -68,11 +69,11 @@ App.PracticeMode = {
                     this.results[q.id] = isCorrect;
                     this.totalAnswered++;
                     if (isCorrect) this.correctCount++;
-                    App.QuestionRenderer.render(q, 'practice-question', true, answer);
+                    App.QuestionRenderer.render(q, 'practice-question', true, answer, this.currentIndex + 1);
                     this.updateWrongBook(q, isCorrect);
                     btn.style.display = 'none';
                 });
-                container.parentElement.appendChild(btn);
+                card.appendChild(btn);
             }, 50);
             return;
         }
@@ -85,10 +86,15 @@ App.PracticeMode = {
             this.results[q.id] = isCorrect;
             this.totalAnswered++;
             if (isCorrect) this.correctCount++;
-            App.QuestionRenderer.render(q, 'practice-question', true, answer);
+            App.QuestionRenderer.render(q, 'practice-question', true, answer, this.currentIndex + 1);
             this.updateWrongBook(q, isCorrect);
             if (isCorrect) {
-                setTimeout(() => this.next(), 600);
+                const savedIndex = this.currentIndex;
+                setTimeout(() => {
+                    if (this.currentIndex === savedIndex) {
+                        this.next();
+                    }
+                }, 600);
             }
         };
         setTimeout(() => {
@@ -220,7 +226,7 @@ App.ExamMode = {
     renderQuestion() {
         const q = this.questions[this.currentIndex];
         const userAnswer = this.answers[q.id] || null;
-        App.QuestionRenderer.render(q, 'exam-question', false, userAnswer);
+        App.QuestionRenderer.render(q, 'exam-question', false, userAnswer, this.currentIndex + 1);
         document.getElementById('exam-progress').textContent =
             `${this.currentIndex + 1}/${this.questions.length}`;
         document.getElementById('exam-prev').disabled = this.currentIndex === 0;
@@ -235,10 +241,11 @@ App.ExamMode = {
             });
             if (q.type === '多选') {
                 App.QuestionRenderer.setupSelectAll(q);
-                const old = document.querySelector(`#options-${q.id} ~ .multi-confirm-btn`);
-                if (old) old.remove();
-                const container = document.getElementById(`options-${q.id}`);
+                const container = App.QuestionRenderer.getOptionsContainer(q);
                 if (!container) return;
+                const card = container.parentElement;
+                const old = card.querySelector('.multi-confirm-btn');
+                if (old) old.remove();
                 const btn = document.createElement('button');
                 btn.className = 'btn btn-primary multi-confirm-btn';
                 btn.textContent = '✅ 确定';
@@ -248,7 +255,7 @@ App.ExamMode = {
                     this.answers[q.id] = answer;
                     this.renderPanel();
                 });
-                container.parentElement.appendChild(btn);
+                card.appendChild(btn);
             }
         }, 50);
     },
@@ -358,7 +365,16 @@ App.WrongBookMode = {
     questions: [], currentIndex: 0, answers: {}, results: {}, correctCount: 0,
 
     start() {
-        const wb = App.DataStore.loadWrongBook();
+        let wb = App.DataStore.loadWrongBook();
+        // Remove entries where correctCount >= 3 (mastered)
+        let changed = false;
+        Object.keys(wb).forEach(key => {
+            if (wb[key].correctCount >= 3) {
+                delete wb[key];
+                changed = true;
+            }
+        });
+        if (changed) App.DataStore.saveWrongBook(wb);
         const keys = Object.keys(wb);
         const hasItems = keys.length > 0;
         App.showPage('page-wrongbook');
@@ -396,7 +412,7 @@ App.WrongBookMode = {
     renderQuestion() {
         const q = this.questions[this.currentIndex];
         const userAnswer = this.answers[q.id] || null;
-        App.QuestionRenderer.render(q, 'wrongbook-question', userAnswer != null, userAnswer);
+        App.QuestionRenderer.render(q, 'wrongbook-question', userAnswer != null, userAnswer, this.currentIndex + 1);
         const wb = App.DataStore.loadWrongBook();
         const rec = wb[String(q.id)] || {};
         const info = document.createElement('div');
@@ -417,9 +433,10 @@ App.WrongBookMode = {
         if (q.type === '多选') {
             setTimeout(() => {
                 App.QuestionRenderer.setupSelectAll(q);
-                const container = document.getElementById(`options-${q.id}`);
+                const container = App.QuestionRenderer.getOptionsContainer(q);
                 if (!container) return;
-                const old = container.querySelector('.multi-confirm-btn');
+                const card = container.parentElement;
+                const old = card.querySelector('.multi-confirm-btn');
                 if (old) old.remove();
                 const btn = document.createElement('button');
                 btn.className = 'btn btn-primary multi-confirm-btn';
@@ -433,7 +450,7 @@ App.WrongBookMode = {
                     this.results[q.id] = isCorrect;
                     if (isCorrect) this.correctCount++;
                     this.updateWrongBook(q, isCorrect);
-                    App.QuestionRenderer.render(q, 'wrongbook-question', true, answer);
+                    App.QuestionRenderer.render(q, 'wrongbook-question', true, answer, this.currentIndex + 1);
                     const wb = App.DataStore.loadWrongBook();
                     const key = String(q.id);
                     const rec = wb[key] || { wrongCount: 0, correctCount: 0 };
@@ -443,10 +460,15 @@ App.WrongBookMode = {
                     document.getElementById('wrongbook-question').appendChild(info);
                     btn.style.display = 'none';
                     if (isCorrect) {
-                        setTimeout(() => this.next(), 600);
+                        const savedIndex = this.currentIndex;
+                        setTimeout(() => {
+                            if (this.currentIndex === savedIndex) {
+                                this.next();
+                            }
+                        }, 600);
                     }
                 });
-                container.appendChild(btn);
+                card.appendChild(btn);
             }, 50);
             return;
         }
@@ -458,7 +480,7 @@ App.WrongBookMode = {
             this.results[q.id] = isCorrect;
             if (isCorrect) this.correctCount++;
             this.updateWrongBook(q, isCorrect);
-            App.QuestionRenderer.render(q, 'wrongbook-question', true, answer);
+            App.QuestionRenderer.render(q, 'wrongbook-question', true, answer, this.currentIndex + 1);
             const wb = App.DataStore.loadWrongBook();
             const key = String(q.id);
             const rec = wb[key] || { wrongCount: 0, correctCount: 0 };
@@ -467,7 +489,12 @@ App.WrongBookMode = {
             info.innerHTML = `❌ 已错 ${rec.wrongCount} 次 | ✅ 已对 ${rec.correctCount}/3 次`;
             document.getElementById('wrongbook-question').appendChild(info);
             if (isCorrect) {
-                setTimeout(() => this.next(), 600);
+                const savedIndex = this.currentIndex;
+                setTimeout(() => {
+                    if (this.currentIndex === savedIndex) {
+                        this.next();
+                    }
+                }, 600);
             }
         };
         setTimeout(() => {

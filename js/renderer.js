@@ -3,19 +3,31 @@
  * Handles rendering questions, options, feedback, and answer checking.
  */
 App.QuestionRenderer = {
-    render(q, containerId, showAnswer = false, userAnswer = null) {
+    render(q, containerId, showAnswer = false, userAnswer = null, questionIndex = null) {
         const container = document.getElementById(containerId);
         if (!container) return;
         const html = this.buildHtml(q, userAnswer);
         const feedbackHtml = showAnswer && userAnswer != null ? this.renderFeedback(q, userAnswer) : '';
+
+        // Determine correct ID suffixes based on container
+        const mapId = (localId) => {
+            const prefix = containerId.replace('-question', '');
+            return `${prefix}-${localId}`;
+        };
+
+        const qnumHtml = questionIndex != null
+            ? `<div class="question-number" id="${mapId('qnum')}">第 ${questionIndex} 题</div>`
+            : '';
+
         container.innerHTML = `
+            ${qnumHtml}
             <div class="question-header">
                 <span class="q-type type-${q.type}">${q.type}</span>
                 ${q.source ? `<span class="q-source">📖 ${escapeHtml(q.source)}</span>` : ''}
             </div>
-            <div class="question-text">${escapeHtml(q.question)}</div>
-            <div class="options-list" id="options-${q.id}">${html}</div>
-            <div class="question-explanation" id="exp-${q.id}">${feedbackHtml}</div>
+            <div class="question-text" id="${mapId('qtext')}">${escapeHtml(q.question)}</div>
+            <div class="options-list" id="${mapId('options')}">${html}</div>
+            <div class="question-explanation" id="${mapId('feedback')}">${feedbackHtml}</div>
         `;
     },
 
@@ -66,10 +78,10 @@ App.QuestionRenderer = {
     },
 
     setupSelectAll(q) {
-        const container = document.getElementById(`options-${q.id}`);
-        if (!container || q.type !== '多选') return;
         const selectAll = document.getElementById(`select-all-${q.id}`);
-        if (!selectAll) return;
+        if (!selectAll || q.type !== '多选') return;
+        const container = selectAll.closest('.options-list');
+        if (!container) return;
         const checkboxes = Array.from(container.querySelectorAll('input[type="checkbox"]')).filter(cb => cb.id !== `select-all-${q.id}`);
         selectAll.addEventListener('change', () => {
             checkboxes.forEach(cb => { cb.checked = selectAll.checked; });
@@ -105,6 +117,15 @@ App.QuestionRenderer = {
             return user.split('').sort().join('') === ans.split('').sort().join('');
         }
         return user === ans;
+    },
+
+    getOptionsContainer(q) {
+        const selectAll = document.getElementById(`select-all-${q.id}`);
+        return selectAll ? selectAll.closest('.options-list') : null;
+    },
+    getQuestionCard(q) {
+        const container = this.getOptionsContainer(q);
+        return container ? container.parentElement : null;
     },
 
     getSelectedAnswer(q) {

@@ -32,6 +32,12 @@ document.addEventListener('DOMContentLoaded', () => {
     // Back buttons
     document.querySelectorAll('.back-btn').forEach(btn => {
         btn.addEventListener('click', () => {
+            // Check if exam is in progress (exam page visible with timer running)
+            const examPage = document.getElementById('page-exam');
+            if (examPage && examPage.style.display !== 'none' && App.ExamMode.timerInterval) {
+                if (!confirm('考试正在进行中，确定要退出吗？\n退出后答题进度将丢失！')) return;
+                clearInterval(App.ExamMode.timerInterval);
+            }
             App.HomePage.render();
             App.showPage('page-home');
         });
