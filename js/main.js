@@ -10,7 +10,8 @@ document.addEventListener('DOMContentLoaded', () => {
         let html = '<input type="text" id="searchInput" placeholder="🔍 搜索题目..." class="search-input">';
         html += '<div class="table-wrap"><table class="q-table"><thead><tr><th>#</th><th>题型</th><th>题目</th><th>答案</th></tr></thead><tbody>';
         qs.forEach(q => {
-            html += `<tr><td>${q.id}</td><td>${q.type}</td><td>${escapeHtml(q.question).substring(0, 60)}...</td><td>${escapeHtml(q.answer)}</td></tr>`;
+            const qtext = escapeHtml(q.question);
+            html += `<tr><td>${q.id}</td><td>${q.type}</td><td>${qtext.length > 60 ? qtext.substring(0, 60) + '...' : qtext}</td><td>${escapeHtml(q.answer)}</td></tr>`;
         });
         html += '</tbody></table></div>';
         App.Modal.open(`全部题目 (${qs.length} 道)`, html);
@@ -63,7 +64,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Exam result
     document.getElementById('result-home')?.addEventListener('click', () => { App.HomePage.render(); App.showPage('page-home'); });
-    document.getElementById('result-review')?.addEventListener('click', () => { App.HomePage.render(); App.showPage('page-home'); });
     document.getElementById('result-wrongbook')?.addEventListener('click', () => App.WrongBookMode.start());
 
     // Wrong book nav

@@ -208,6 +208,10 @@ App.ExcelParser = {
         if (q.type === '简答') {
             q.keyPoints = answer.split(/[|；;]/).map(s => s.trim()).filter(s => s);
         }
+        // Normalize answer for lookup: remove separators for consistency
+        if (q.type === '多选' || q.type === '单选') {
+            q.answer = q.answer.replace(/[，,、\s;；.．-]/g, '').toUpperCase();
+        }
         return q;
     }
 };

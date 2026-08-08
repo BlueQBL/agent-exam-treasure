@@ -170,9 +170,13 @@ App.ExamMode = {
     showConfig() {
         const allQ = App.DataStore.loadQuestions();
         if (allQ.length === 0) { alert('请先上传题库！'); return; }
+        const available = allQ.filter(q => q.type !== '简答');
+        if (available.length === 0) {
+            alert('题库中没有客观题（单选/多选/判断），无法进行考试。请先导入包含客观题的题库。');
+            return;
+        }
         document.querySelectorAll('#page-exam-config input[type="checkbox"]')
             .forEach(cb => { cb.checked = true; });
-        const available = allQ.filter(q => q.type !== '简答');
         const countEl = document.getElementById('examCount');
         countEl.max = available.length;
         countEl.value = Math.min(parseInt(countEl.value) || 20, available.length);
@@ -215,7 +219,7 @@ App.ExamMode = {
         if (document.getElementById('exam-shuffleOptions').checked)
             this.questions.forEach(q => { shuffleOptionsWithAnswer(q); });
         this.currentIndex = 0; this.answers = {};
-        this.totalScore = count * this.scorePerQuestion;
+        this.totalScore = this.questions.length * this.scorePerQuestion;
         this.remainingSeconds = this.durationMinutes * 60;
         App.showPage('page-exam');
         this.renderQuestion();
@@ -289,7 +293,7 @@ App.ExamMode = {
             const timerEl = document.getElementById('exam-timer');
             if (timerEl) {
                 timerEl.textContent = `⏱ ${m}:${String(s).padStart(2, '0')}`;
-                if (this.remainingSeconds < 60) timerEl.style.color = 'var(--danger)';
+                timerEl.classList.toggle('urgent', this.remainingSeconds < 60);
             }
         }, 1000);
     },
