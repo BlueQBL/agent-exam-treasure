@@ -35,6 +35,5 @@ App.DataStore = {
     saveStats(s) {
         const d = this.load() || { questions: [], wrongBook: {}, stats: initStats() };
         d.stats = s; this.save(d);
-
     }
 };
